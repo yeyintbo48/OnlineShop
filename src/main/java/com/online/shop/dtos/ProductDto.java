@@ -1,5 +1,6 @@
 package com.online.shop.dtos;
 
+import java.math.BigDecimal;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -16,9 +17,10 @@ public class ProductDto {
     private String description;
 
     @NotNull(message = "Price cannot be Null!")
-    private Double price;
+    @Min(value = 0,message = "At least Price is 0 or more!")
+    private BigDecimal price;
 
-    @Min(message = "You need to buy at least one item", value = 1)
+    @Min(value = 0,message = "Stock quantity must be 0 or more!")
     private Integer stock_quantity;
 
     @NotNull(message = "Category id is required")
