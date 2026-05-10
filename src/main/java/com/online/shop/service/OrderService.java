@@ -4,6 +4,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import com.online.shop.dtos.OrderStatus;
 import com.online.shop.entity.Cart;
@@ -89,5 +93,10 @@ public class OrderService {
             product.setStock_quantity(newStock);
             productRepo.save(product);
         }
+    }
+
+    public Page<Order> getUserOrders(Long userId,int page,int size){
+        Pageable pageable = PageRequest.of(page, size,Sort.by("id").descending());
+        return orderRepo.findByUserId(userId, pageable);
     }
 }

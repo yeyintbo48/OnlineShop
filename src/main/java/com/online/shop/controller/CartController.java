@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.online.shop.entity.Cart;
-import com.online.shop.entity.CartItem;
 import com.online.shop.service.CartService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -33,14 +32,14 @@ public class CartController {
     }
 
     @DeleteMapping("/remove/{cartItemId}")
-    public ResponseEntity<Void> cartItemRemove(@PathVariable Long cartItemId){
+    public ResponseEntity<String> cartItemRemove(@PathVariable Long cartItemId){
         cartService.cartItemRemove(cartItemId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok("Item removed from cart successfully!");
     }
 
     @DeleteMapping("/clear/{userId}")
-    public ResponseEntity<Void> clearCart(@PathVariable Long userId){
+    public ResponseEntity<String> clearCart(@PathVariable Long userId){
         cartService.clearCart(userId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok("Cart cleared successfully!");
     }
 }
