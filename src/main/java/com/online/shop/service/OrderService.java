@@ -15,6 +15,8 @@ import com.online.shop.entity.CartItem;
 import com.online.shop.entity.Order;
 import com.online.shop.entity.OrderItem;
 import com.online.shop.entity.Product;
+import com.online.shop.exception.OrderProcessingException;
+import com.online.shop.exception.ResourceNotFoundException;
 import com.online.shop.repository.CartRepo;
 import com.online.shop.repository.OrderRepo;
 import com.online.shop.repository.ProductRepo;
@@ -41,9 +43,9 @@ public class OrderService {
     }
 
     private Cart getCart(Long userId){
-        Cart cart = cartRepo.findById(userId).orElseThrow(()-> new RuntimeException("Cart not found!"));
+        Cart cart = cartRepo.findById(userId).orElseThrow(()-> new ResourceNotFoundException("Cart not found!"));
         if(cart.getCartItems().isEmpty()){
-            throw new RuntimeException("Cart is empty!");
+            throw new OrderProcessingException("Cart is empty!");
         }
         return cart;
     }
@@ -54,7 +56,7 @@ public class OrderService {
             int requestedQty = item.getQuantity();
             int availableQty = product.getStock_quantity();
             if(requestedQty > availableQty){
-                throw new RuntimeException(product.getName() + "Stock မလောက်ပါ။ကျန်ရှိမှု" + availableQty + "ခု");
+                throw new OrderProcessingException(product.getName() + "Stock မလောက်ပါ။ကျန်ရှိမှု" + availableQty + "ခု");
             }
         }
     }

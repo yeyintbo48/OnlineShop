@@ -6,6 +6,7 @@ import com.online.shop.entity.Cart;
 import com.online.shop.entity.CartItem;
 import com.online.shop.entity.Product;
 import com.online.shop.entity.User;
+import com.online.shop.exception.ResourceNotFoundException;
 import com.online.shop.repository.CartItemRepo;
 import com.online.shop.repository.CartRepo;
 import com.online.shop.repository.ProductRepo;
@@ -21,7 +22,7 @@ public class CartService {
     private final UserRepo userRepo;
 
     public Cart addItemsToCart(Long userId,Long productId, int quantity) {
-        Product product = productRepo.findById(productId).orElseThrow(() -> new RuntimeException("Product not found"));
+        Product product = productRepo.findById(productId).orElseThrow(() -> new ResourceNotFoundException("Product not found"));
         Cart cart = getOrCreateCart(userId);
         CartItem existingItem = cartItemRepo.findByCartAndProduct(cart,product);
         if (existingItem != null) {
@@ -38,12 +39,12 @@ public class CartService {
     }
     
     public void cartItemRemove(Long cartItemId){
-        CartItem cartItem = cartItemRepo.findById(cartItemId).orElseThrow(() -> new RuntimeException("Cart item not found"));
+        CartItem cartItem = cartItemRepo.findById(cartItemId).orElseThrow(() -> new ResourceNotFoundException("Cart item not found"));
         cartItemRepo.delete(cartItem);
     }
 
     public void clearCart(Long userId){
-        Cart cart = cartRepo.findByUserId(userId).orElseThrow(() -> new RuntimeException("Cart not found"));
+        Cart cart = cartRepo.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
         cart.getCartItems().clear();
         cartRepo.save(cart);
     }
@@ -54,7 +55,7 @@ public class CartService {
 
     public Cart getOrCreateCart(Long userId){
         return cartRepo.findByUserId(userId).orElseGet(() -> {
-            User user = userRepo.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+            User user = userRepo.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
             Cart newCart = new Cart();
             newCart.setUser(user);
             return cartRepo.save(newCart);

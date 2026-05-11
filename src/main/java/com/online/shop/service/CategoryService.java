@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import com.online.shop.dtos.CategoryDto;
 import com.online.shop.entity.Category;
 import com.online.shop.entity.Product;
+import com.online.shop.exception.ResourceNotFoundException;
 import com.online.shop.repository.CategoryRepo;
 import com.online.shop.repository.ProductRepo;
 import jakarta.transaction.Transactional;
@@ -21,7 +22,7 @@ public class CategoryService {
     }
 
     public Category getCategoryById(Long id){
-        return categoryRepo.findById(id).orElseThrow(()-> new RuntimeException("Category not found with ID:" + id));
+        return categoryRepo.findById(id).orElseThrow(()-> new ResourceNotFoundException("Category id:" + id + "not found!"));
     }
 
     @Transactional
@@ -40,7 +41,7 @@ public class CategoryService {
 
     public Category updateCategory(Long id,CategoryDto request){
         Category category = categoryRepo.findById(request.getId())
-        .orElseThrow(()-> new RuntimeException("Category not found with ID:" + id));
+        .orElseThrow(()-> new ResourceNotFoundException("Category not found with ID:" + id));
         if(request.getProducts()!=null){
             List<Product> products = productRepo.findAllById(request.getProducts());
             products.forEach(p-> p.setCategory(category));

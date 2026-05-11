@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import com.online.shop.dtos.ProductDto;
 import com.online.shop.entity.Category;
 import com.online.shop.entity.Product;
+import com.online.shop.exception.ResourceNotFoundException;
 import com.online.shop.repository.CategoryRepo;
 import com.online.shop.repository.ProductRepo;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +25,7 @@ public class ProductService {
     }
 
     public Product getProductById(Long id){
-        return productRepo.findById(id).orElseThrow(()-> new RuntimeException("Product not found with ID:" + id));
+        return productRepo.findById(id).orElseThrow(()-> new ResourceNotFoundException("Product id:" +id + "not found!"));
     }
 
     public Product updateProduct(Long id,ProductDto request){
