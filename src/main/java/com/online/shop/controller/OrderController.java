@@ -10,6 +10,7 @@ import com.online.shop.entity.Order;
 import com.online.shop.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
 @RequiredArgsConstructor
@@ -17,15 +18,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class OrderController {
     private final OrderService orderService;
 
-    @PostMapping("/place")
-    public ResponseEntity<?> placeOrder(@RequestParam Long userId){
-        try{
-            orderService.placeOrder(userId);
-            return ResponseEntity.ok("Order placed successfully!");
-        }catch(RuntimeException e){
-            //not enough stock or cart is empty!
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    @PostMapping("/place/{userId}")
+    public ResponseEntity<Order> placeOrder(@PathVariable Long userId){
+        return ResponseEntity.ok(orderService.placeOrder(userId));
     }
 
     @GetMapping("/page")

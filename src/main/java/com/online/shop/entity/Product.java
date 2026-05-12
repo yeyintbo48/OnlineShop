@@ -13,6 +13,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -39,4 +40,8 @@ public class Product{
     @OneToMany(mappedBy = "product",fetch = FetchType.LAZY)
     @JsonIgnore
     private List<CartItem> cartItems;
+
+    //for optimistic locking to prevent concurrent updates
+    @Version
+    private Integer version;
 }

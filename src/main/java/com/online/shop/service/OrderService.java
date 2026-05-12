@@ -2,13 +2,16 @@ package com.online.shop.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.online.shop.dtos.OrderStatus;
 import com.online.shop.entity.Cart;
 import com.online.shop.entity.CartItem;
@@ -20,7 +23,6 @@ import com.online.shop.exception.ResourceNotFoundException;
 import com.online.shop.repository.CartRepo;
 import com.online.shop.repository.OrderRepo;
 import com.online.shop.repository.ProductRepo;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -34,36 +36,43 @@ public class OrderService {
 
     public Order placeOrder(Long userId){
         Cart cart = getCart(userId);
-        checkStock(cart);
+        Map<Long,Product> lockedProductMap = validateAndLockStock(cart);
         Order order = createOrder(userId,cart);
-        saveOrderItems(order,cart);
-        updateInventory(cart);
+        saveOrderItems(order,cart,lockedProductMap);
+        updateInventory(cart,lockedProductMap);
         cartService.clearCart(userId);
         return orderRepo.save(order);
     }
 
     private Cart getCart(Long userId){
-        Cart cart = cartRepo.findById(userId).orElseThrow(()-> new ResourceNotFoundException("Cart not found!"));
+        Cart cart = cartRepo.findByUserId(userId).orElseThrow(()-> new ResourceNotFoundException("Cart not found!"));
         if(cart.getCartItems().isEmpty()){
             throw new OrderProcessingException("Cart is empty!");
         }
         return cart;
     }
 
-    private void checkStock(Cart cart){
+    private Map<Long,Product> validateAndLockStock(Cart cart){
+        Map<Long,Product> lockedProducts = new HashMap<>();
         for(CartItem item : cart.getCartItems()){
-            Product product = item.getProduct();
-            int requestedQty = item.getQuantity();
-            int availableQty = product.getStock_quantity();
-            if(requestedQty > availableQty){
-                throw new OrderProcessingException(product.getName() + "Stock မလောက်ပါ။ကျန်ရှိမှု" + availableQty + "ခု");
+            Product product = productRepo.findByIdForUpdate(item.getProduct().getId())
+            .orElseThrow(() -> new ResourceNotFoundException("Product not found: "));
+            if(product.getStock_quantity() <= 0){
+                throw new OrderProcessingException(product.getName() + "Stock ပြတ်နေပါသည်! Available: " + product.getStock_quantity());
+            }else if(item.getQuantity() > product.getStock_quantity()){
+                throw new OrderProcessingException(
+                    String.format("%s ရဲ့ လက်ကျန် Stock အရေအတွက်မှာ %d ခုသာရှိပါတယ်! သင်မှာ %d ခုလိုချင်ပါတယ်!",
+                     product.getName(), product.getStock_quantity(), item.getQuantity())
+                );
             }
+            lockedProducts.put(product.getId(),product);
         }
+        return lockedProducts;
     }
 
     private Order createOrder(Long userId,Cart cart){
-        BigDecimal totalAmount  = cart.getCartItems().stream()
-            .map(item -> item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+        BigDecimal totalAmount  = cart.getCartItems()
+            .stream().map(item -> item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
             .reduce(BigDecimal.ZERO,BigDecimal::add);
 
         Order order = new Order();
@@ -74,29 +83,36 @@ public class OrderService {
         return order;
     }
 
-    private void saveOrderItems(Order order,Cart cart){
-        List<OrderItem> orderItems = cart.getCartItems().stream().map(cartItem ->{
+    private void saveOrderItems(Order order,Cart cart,Map<Long,Product> lockedProductMap){
+        List<OrderItem> orderItems = cart.getCartItems()
+            .stream().map(cartItem ->{
+            Product lockedProduct = lockedProductMap.get(cartItem.getProduct().getId());
+
             OrderItem orderItem = new OrderItem();
             orderItem.setOrder(order);
             orderItem.setProduct(cartItem.getProduct());
             orderItem.setQuantity(cartItem.getQuantity());
-            //orderတင်တဲ့အချိန်priceကိုsnapshotသိမ်းထား
-            orderItem.setPriceAtOrder(cartItem.getProduct().getPrice());
+
+            //စျေးနှုန်း SnapShot ကို lock ခတ်ထားတဲ့ product ဆီကဘဲယူမှာ
+            orderItem.setPriceAtOrder(lockedProduct.getPrice());
             return orderItem;
         })
         .collect(Collectors.toList());
         order.setOrderItems(orderItems);
     }
 
-    private void updateInventory(Cart cart){
+    private void updateInventory(Cart cart,Map<Long,Product> lockedProductMap){
+        Map<Long,Product> productList = new HashMap<>();
         for(CartItem item :cart.getCartItems()){
             Product product = item.getProduct();
             int newStock = product.getStock_quantity() - item.getQuantity();
             product.setStock_quantity(newStock);
-            productRepo.save(product);
+            productList.put(product.getId(), product);
         }
+        productRepo.saveAll(productList.values());
     }
 
+    @Transactional(readOnly = true)
     public Page<Order> getUserOrders(Long userId,int page,int size){
         Pageable pageable = PageRequest.of(page, size,Sort.by("id").descending());
         return orderRepo.findByUserId(userId, pageable);
