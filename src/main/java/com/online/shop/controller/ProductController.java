@@ -26,8 +26,8 @@ public class ProductController {
     private final CategoryService categoryService;
 
     @GetMapping
-    public ResponseEntity<List<Product>> getAllProducts() {
-    return ResponseEntity.ok(productService.getAllProducts());
+        public ResponseEntity<List<Product>> getAllProducts() {
+        return ResponseEntity.ok(productService.getAllProducts());
     }
 
     @PostMapping("/add")
