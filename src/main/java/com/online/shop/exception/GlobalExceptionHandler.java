@@ -13,10 +13,12 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import com.online.shop.dtos.ErrorResponse;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler{
-    
+
         //Validation Error Handling
         @ExceptionHandler(MethodArgumentNotValidException.class)
         public ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,HttpHeaders headers,HttpStatusCode statusCode,WebRequest request){
@@ -78,6 +80,7 @@ public class GlobalExceptionHandler{
     //Generic Exception (FallBack)
     @ExceptionHandler(Exception.class)
         public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex,WebRequest request){
+            log.error("An excepted error occured!",ex);
             ErrorResponse error = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
