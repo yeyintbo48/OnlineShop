@@ -10,19 +10,18 @@ import lombok.Data;
 public class ProductDto {
     private Long id;
 
-    @NotBlank(message = "Name cannot be blank!")
+    @NotBlank(message = "You need to add product name!")
     private String name;
      
     @NotBlank(message = "Description cannot be blank!")
     private String description;
 
-    @NotNull(message = "Price cannot be Null!")
-    @Min(value = 0,message = "At least Price is 0 or more!")
+    @Min(value = 0,message = "price is not negative!")
     private BigDecimal price;
 
-    @Min(value = 0,message = "Stock quantity must be 0 or more!")
+    @Min(value = 0,message = "Stock quantity is not negative!")
     private Integer stock_quantity;
 
-    @NotNull(message = "Category id is required")
+    @NotNull(message = "Please select category")
     private Long categoryId;
 }

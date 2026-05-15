@@ -29,14 +29,14 @@ public class ProductService {
     }
 
     public Product updateProduct(Long id,ProductDto request){
-        Product product = productRepo.findById(id).orElseThrow(()-> new RuntimeException("Product not found with ID:" + id)); 
+        Product product = productRepo.findById(id).orElseThrow(()-> new ResourceNotFoundException("Product not found with ID:" + id)); 
         product.setName(request.getName());
         product.setDescription(request.getDescription());
         product.setPrice(request.getPrice());
         product.setStock_quantity(request.getStock_quantity());
         if(request.getCategoryId() != null){
             Category category = categoryRepo.findById(request.getCategoryId())
-            .orElseThrow(()->new RuntimeException("Category not found with Id:" + request.getCategoryId()));
+            .orElseThrow(()->new ResourceNotFoundException("Category not found with Id:" + request.getCategoryId()));
             product.setCategory(category);
         }
         return productRepo.save(product);
