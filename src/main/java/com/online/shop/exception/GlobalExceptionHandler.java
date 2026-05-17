@@ -84,7 +84,7 @@ public class GlobalExceptionHandler{
             ErrorResponse error = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Srver Error",
+                "Server Error",
                 "Something went wrong,Try again later",
                 request.getDescription(false)
             );

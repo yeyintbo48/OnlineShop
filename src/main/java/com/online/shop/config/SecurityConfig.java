@@ -27,8 +27,9 @@ public class SecurityConfig {
             "/api/products/**",
             "/api/categories/**",
             "/api/orders/**",
-            "/api/cart/**")
-            .permitAll()
+            "/api/cart/**",
+            "/v3/api-docs/**",
+            "/swagger-ui/**").permitAll()
             .anyRequest().authenticated()
         )
             .sessionManagement(session -> session
