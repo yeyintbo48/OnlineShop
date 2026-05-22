@@ -9,6 +9,7 @@ import com.online.shop.dtos.AuthenticationResponse;
 import com.online.shop.dtos.RegisterRequest;
 import com.online.shop.dtos.Role;
 import com.online.shop.entity.User;
+import com.online.shop.exception.ResourceNotFoundException;
 import com.online.shop.repository.UserRepo;
 import com.online.shop.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +36,7 @@ public class AuthService {
     public AuthenticationResponse login(AuthenticationRequest request){
         authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(request.email(), request.password()));
-            var user = userRepo.findByEmail(request.email()).orElseThrow();
+            var user = userRepo.findByEmail(request.email()).orElseThrow(() ->new ResourceNotFoundException("User not found with this email:" + request.email()));
 
             var jwtToken = jwtService.generateToken(user);
             return new AuthenticationResponse(jwtToken);

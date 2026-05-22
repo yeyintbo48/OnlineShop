@@ -2,6 +2,7 @@ package com.online.shop.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -24,12 +25,15 @@ public class SecurityConfig {
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/api/auth/**",
-            "/api/products/**",
             "/api/categories/**",
             "/api/orders/**",
             "/api/cart/**",
             "/v3/api-docs/**",
             "/swagger-ui/**").permitAll()
+            .requestMatchers(HttpMethod.GET,"/api/products/**").permitAll()
+            .requestMatchers(HttpMethod.POST,"/api/products/**").hasAuthority("ADMIN")
+            .requestMatchers(HttpMethod.PUT,"/api/products/**").hasAuthority("ADMIN")
+            .requestMatchers(HttpMethod.DELETE,"/api/products/**").hasAuthority("ADMIN")
             .anyRequest().authenticated()
         )
             .sessionManagement(session -> session
