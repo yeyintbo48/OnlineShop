@@ -41,7 +41,7 @@ public class Order {
     private LocalDateTime orderedAt;
 
     @Enumerated(EnumType.STRING)
-    private OrderStatus status = OrderStatus.PENDING;
+    private OrderStatus orderStatus;
 
     @OneToMany(mappedBy = "order",cascade = CascadeType.ALL,orphanRemoval = true)
     @JsonIgnoreProperties("order")

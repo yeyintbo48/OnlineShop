@@ -21,10 +21,14 @@ public class GlobalExceptionHandler{
 
         //Validation Error Handling
         @ExceptionHandler(MethodArgumentNotValidException.class)
-        public ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,HttpHeaders headers,HttpStatusCode statusCode,WebRequest request){
-        Map<String,String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error -> 
-            errors.put(error.getField(),error.getDefaultMessage())
+            public ResponseEntity<Object> handleMethodArgumentNotValid(
+                MethodArgumentNotValidException ex,
+                HttpHeaders headers,
+                HttpStatusCode statusCode,
+                WebRequest request){
+                Map<String,String> errors = new HashMap<>();
+                ex.getBindingResult().getFieldErrors().forEach(error -> 
+                errors.put(error.getField(),error.getDefaultMessage())
         );
 
         ErrorResponse errorResponse = new ErrorResponse(
@@ -40,7 +44,7 @@ public class GlobalExceptionHandler{
 
     //Database Integrity Error
     @ExceptionHandler(DataIntegrityViolationException.class)
-        public ResponseEntity<ErrorResponse> handleDateIntegrity(DataIntegrityViolationException ex,WebRequest request){
+        public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex,WebRequest request){
             ErrorResponse error = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.CONFLICT.value(),

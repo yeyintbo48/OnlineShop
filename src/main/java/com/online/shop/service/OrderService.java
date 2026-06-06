@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,11 +18,13 @@ import com.online.shop.entity.Cart;
 import com.online.shop.entity.CartItem;
 import com.online.shop.entity.Order;
 import com.online.shop.entity.OrderItem;
+import com.online.shop.entity.PaymentRecord;
 import com.online.shop.entity.Product;
 import com.online.shop.exception.OrderProcessingException;
 import com.online.shop.exception.ResourceNotFoundException;
 import com.online.shop.repository.CartRepo;
 import com.online.shop.repository.OrderRepo;
+import com.online.shop.repository.PaymentRecordRepo;
 import com.online.shop.repository.ProductRepo;
 import lombok.RequiredArgsConstructor;
 
@@ -33,6 +36,7 @@ public class OrderService {
     private final CartRepo cartRepo;
     private final ProductRepo productRepo;
     private final CartService cartService;
+    private final PaymentRecordRepo paymentRecordRepo;
 
     public Order placeOrder(Long userId){
         Cart cart = getCart(userId);
@@ -79,7 +83,7 @@ public class OrderService {
         order.setUser(cart.getUser());
         order.setTotalAmount(totalAmount);
         order.setOrderedAt(LocalDateTime.now());
-        order.setStatus(OrderStatus.PENDING);
+        order.setOrderStatus(OrderStatus.PENDING);
         return order;
     }
 
@@ -116,5 +120,29 @@ public class OrderService {
     public Page<Order> getUserOrders(Long userId,int page,int size){
         Pageable pageable = PageRequest.of(page, size,Sort.by("id").descending());
         return orderRepo.findByUserId(userId, pageable);
+    }
+
+    public void updatdeOrderStatus(Long orderId,OrderStatus newStatus,String transactionId){
+        Order order = orderRepo.findById(orderId).orElseThrow(()->new ResourceNotFoundException("Order not found with ID:" + orderId));
+        if(order.getOrderStatus() == OrderStatus.PAID){
+            System.out.println("Order" + orderId + "is already PAID.Ignore duplicate webhook event.");
+            return;
+        }
+        order.setOrderStatus(newStatus);
+        orderRepo.save(order);
+
+        if(newStatus == OrderStatus.PAID){
+            Optional<PaymentRecord> existingRecord = paymentRecordRepo.findByTransactionId(transactionId);
+            if(existingRecord.isEmpty()){
+                PaymentRecord record = new PaymentRecord();
+                record.setOrderId(orderId);
+                record.setTransactionId(transactionId);
+                record.setAmount(order.getTotalAmount());
+                record.setCurrency("usd");
+                record.setPaymentDate(LocalDateTime.now());
+                paymentRecordRepo.save(record);
+            }
+            System.out.println("Payment record saved for order id:" + orderId);
+        }
     }
 }

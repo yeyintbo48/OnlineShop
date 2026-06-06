@@ -1,6 +1,11 @@
 package com.online.shop.controller;
 
+import com.online.shop.repository.OrderRepo;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,8 +19,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/order")
+@RequestMapping("/api/orders")
 public class OrderController {
+    private final OrderRepo orderRepo;
     private final OrderService orderService;
 
     @PostMapping("/place/{userId}")
@@ -30,5 +36,18 @@ public class OrderController {
         @RequestParam(defaultValue = "10") int size){
         Page<Order> orders = orderService.getUserOrders(userId, page, size);
         return ResponseEntity.ok(orders);
+    }
+
+    @GetMapping("/{orderId}/orderStatus")
+    public ResponseEntity<Map<String,String>> checkOrderStatus(@PathVariable Long orderId) {
+        Optional<Order> orderOptional = orderRepo.findById(orderId);
+        if(orderOptional.isPresent()){
+            Order order = orderOptional.get();
+            Map<String ,String> response = new HashMap<>();
+            response.put("status",order.getOrderStatus().toString());
+            return ResponseEntity.ok(response);
+        }else{
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
     }
 }

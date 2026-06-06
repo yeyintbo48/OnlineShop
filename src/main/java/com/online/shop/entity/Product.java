@@ -41,6 +41,10 @@ public class Product{
     @JsonIgnore
     private List<CartItem> cartItems;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
     //for optimistic locking to prevent concurrent updates
     @Version
     private Integer version;

@@ -16,32 +16,36 @@ import lombok.RequiredArgsConstructor;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+    
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authProvider;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-        .csrf(csrf -> csrf.disable())
-        .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/auth/**",
-            "/api/categories/**",
-            "/api/orders/**",
-            "/api/cart/**",
-            "/v3/api-docs/**",
-            "/swagger-ui/**").permitAll()
-            .requestMatchers(HttpMethod.GET,"/api/products/**").permitAll()
-            .requestMatchers(HttpMethod.POST,"/api/products/**").hasAuthority("ADMIN")
-            .requestMatchers(HttpMethod.PUT,"/api/products/**").hasAuthority("ADMIN")
-            .requestMatchers(HttpMethod.DELETE,"/api/products/**").hasAuthority("ADMIN")
-            .anyRequest().authenticated()
-        )
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                    "/api/auth/**",
+                    "/api/webhook",
+                    "/api/webhook/**",
+                    "/api/categories/**",
+                    "/v3/api-docs/**",
+                    "/swagger-ui/**"
+                ).permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/products/**").hasAuthority("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/products/**").hasAuthority("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasAuthority("ADMIN")
+                .requestMatchers("/api/orders/**", "/api/cart/**").authenticated() 
+                .anyRequest().authenticated()
+            )
             .sessionManagement(session -> session
-            .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
             .authenticationProvider(authProvider)
-            .addFilterBefore(jwtAuthFilter,UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
-            return http.build();
+        return http.build();
     }
 }
