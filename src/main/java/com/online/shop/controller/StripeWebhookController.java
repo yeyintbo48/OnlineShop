@@ -15,12 +15,14 @@ import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.PaymentIntent;
 import com.stripe.net.Webhook;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
 @RestController
 @RequiredArgsConstructor
+@Slf4j
 @RequestMapping("/api/webhook")
 public class StripeWebhookController {
     private final OrderService orderService;
@@ -35,6 +37,8 @@ public class StripeWebhookController {
         System.out.println("Webhook Endpoint Hit! Received Request.");
         String payload = new String(payloadBytes,StandardCharsets.UTF_8);
         Event event = null;
+
+        //Security Checking
         try{
             event = Webhook.constructEvent(payload, sigHeader, endpointSecret);
         }catch(SignatureVerificationException e){
@@ -45,6 +49,7 @@ public class StripeWebhookController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Webhook Error!");
         }
 
+        //Fetch Event Data
         EventDataObjectDeserializer dataObjectDeserializer = event.getDataObjectDeserializer();
         if(!dataObjectDeserializer.getObject().isPresent()){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Failed to deserialize object!");
@@ -56,11 +61,11 @@ public class StripeWebhookController {
                 String piOrderIdStr = paymentIntent.getMetadata().get("orderId");
                 if(piOrderIdStr != null){
                     Long orderId = Long.parseLong(piOrderIdStr);
-                    orderService.updatdeOrderStatus(orderId,OrderStatus.PAID,paymentIntent.getId());
-                    System.out.println("Success:Order" + orderId + "is marked as PAID(via paymentIntent).");
-                    System.out.println("✅ SUCCESS: Order " + orderId + " is marked as PAID (via Charge).");
+                    String remarks = "Payment Succeeded via Stripe PaymentIntent:" + paymentIntent.getId();
+                    orderService.updateOrderStatus(orderId,OrderStatus.PAID,paymentIntent.getId(),remarks);
+                    log.info("✅SUCCESS: Order: {} is marked as PAID",orderId);
                 } else {
-                    System.out.println("⚠️ WARNING: charge.succeeded ဝင်လာသော်လည်း Metadata တွင် 'orderId' မပါဝင်ပါ။");
+                    log.warn("⚠️ WARNING: payment_intent.succeeded ဝင်လာသော်လည်း Metadata တွင် 'orderId' မပါဝင်ပါ။ PaymentIntent ID: {}", paymentIntent.getId());
                 }
                 break;
 
@@ -69,10 +74,11 @@ public class StripeWebhookController {
                 String orderIdStr  = successfulCharge.getMetadata().get("orderId");
                 if(orderIdStr != null){
                     Long orderId = Long.parseLong(orderIdStr);
-                    orderService.updatdeOrderStatus(orderId,OrderStatus.PAID,successfulCharge.getId());
-                    System.out.println("✅ SUCCESS: Order " + orderId + " is marked as PAID (via Charge).");
+                    String remarks = "Payment Succeeded via Stripe Charge:" +successfulCharge.getId();
+                    orderService.updateOrderStatus(orderId,OrderStatus.PAID,successfulCharge.getId(),remarks);
+                    log.info("✅ SUCCESS: Order:{} is marked as PAID.",orderId);
                 } else {
-                    System.out.println("⚠️ WARNING: charge.succeeded ဝင်လာသော်လည်း Metadata တွင် 'orderId' မပါဝင်ပါ။");
+                    log.warn("⚠️ WARNING: charge.succeeded ဝင်လာသော်လည်း Metadata တွင် 'orderId' မပါဝင်ပါ။PaymentIntent ID:{}" ,successfulCharge.getId());
                 }
                 break;
 
@@ -81,15 +87,17 @@ public class StripeWebhookController {
                 String failedOrderIdStr  = failedCharge.getMetadata().get("orderId");
                 if(failedOrderIdStr != null){
                     Long orderId = Long.parseLong(failedOrderIdStr);
-                    orderService.updatdeOrderStatus(orderId,OrderStatus.FAILED,failedCharge.getId());
-                System.out.println("✅ FAILED: Order " + orderId + " is marked as FAIL (via Charge).");
+                    String failReason = failedCharge.getFailureMessage() != null ? failedCharge.getFailureMessage() : "Unknown Reason";
+                    String remarks = "Payment failed via Stripe Charge:" + failReason;
+                    orderService.updateOrderStatus(orderId,OrderStatus.FAILED,failedCharge.getId(),remarks);
+                    log.info("✅ FAILED: Order:{} is marked as FAIL.",orderId,failReason);
                 } else {
-                    System.out.println("⚠️ WARNING: charge.succeeded ဝင်လာသော်လည်း Metadata တွင် 'orderId' မပါဝင်ပါ။");
+                    log.warn("⚠️ WARNING: charge.failed ဝင်လာသော်လည်း Metadata တွင် 'orderId' မပါဝင်ပါ။Charge ID:{}", failedCharge.getId());
                 }
                 break;
 
                 default :
-                System.out.println("!INFO: Unhandled EventType" + event.getType());
+                log.info("!INFO: Unhandled EventType:{}" + event.getType());
         }
         return ResponseEntity.ok("Success");
     }

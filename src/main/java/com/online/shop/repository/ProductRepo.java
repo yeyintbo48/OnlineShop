@@ -6,11 +6,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
 import com.online.shop.entity.Product;
 import jakarta.persistence.LockModeType;
 
-@Repository
 public interface ProductRepo extends JpaRepository<Product,Long>{
 
     Page<Product> findByUserId(Long userId,Pageable pageable);

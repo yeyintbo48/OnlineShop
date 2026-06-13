@@ -3,8 +3,6 @@ package com.online.shop.service;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.hibernate.boot.Metadata;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
