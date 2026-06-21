@@ -41,7 +41,7 @@ public class OrderService {
     private final ProductRepo productRepo;
     private final CartService cartService;
     private final PaymentRecordRepo paymentRecordRepo;
-    private final OrderStatusHistoryRepo orderStatusHistoryRepo;
+    private final OrderStatusHistoryRepo historyRepo;
 
     public Order placeOrder(Long userId){
         Cart cart = getCart(userId);
@@ -141,7 +141,7 @@ public class OrderService {
         history.setPreviousStatus(oldStatus);
         history.setNewStatus(newStatus);
         history.setRemarks(remarks);
-        orderStatusHistoryRepo.save(history);
+        historyRepo.save(history);
 
         order.setOrderStatus(newStatus);
         orderRepo.save(order);
