@@ -110,15 +110,12 @@ public class OrderService {
         order.setOrderItems(orderItems);
     }
 
-    private void updateInventory(Cart cart,Map<Long,Product> lockedProductMap){
-        Map<Long,Product> productList = new HashMap<>();
+    private void updateInventory(Cart cart, Map<Long,Product> lockedProductMap){
         for(CartItem item :cart.getCartItems()){
-            Product product = item.getProduct();
-            int newStock = product.getStock_quantity() - item.getQuantity();
-            product.setStock_quantity(newStock);
-            productList.put(product.getId(), product);
+            Product lockedProduct = lockedProductMap.get(item.getProduct().getId());
+            int newStock = lockedProduct.getStock_quantity() - item.getQuantity();
+            lockedProduct.setStock_quantity(newStock);
         }
-        //productRepo.saveAll(productList.values());
     }
 
     @Transactional(readOnly = true)
@@ -127,13 +124,13 @@ public class OrderService {
         return orderRepo.findByUserId(userId, pageable);
     }
 
-    public void updateOrderStatus(Long orderId,OrderStatus newStatus,String transactionId,String remarks){
+    public Order updateOrderStatus(Long orderId,OrderStatus newStatus,String transactionId,String remarks){
         Order order = orderRepo.findById(orderId).orElseThrow(()->new ResourceNotFoundException("Order not found with ID:" + orderId));
 
         OrderStatus oldStatus = order.getOrderStatus();
         if(oldStatus == newStatus){
             log.info("Order {} is already {}.Ignoring duplicate update",orderId,newStatus);
-            return;
+            return order;
         }
 
         OrderStatusHistory history = new OrderStatusHistory();
@@ -159,5 +156,6 @@ public class OrderService {
                 log.info("Payment record saved for order id:{}",orderId);
             }
         }
+        return order;
     }
 }
